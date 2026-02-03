@@ -2,18 +2,21 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * SUPABASE CONFIGURATION
- * Project URL: https://psywkhxrbgiriwzvcdpd.supabase.co
+ * COGNITIVE SALES AI - SUPABASE SERVICE
  * 
- * REQUIRED GOOGLE CLOUD CONFIGURATION:
- * In Google Cloud Console (APIs & Services > Credentials), 
- * your "Authorized redirect URIs" MUST include:
- * https://psywkhxrbgiriwzvcdpd.supabase.co/auth/v1/callback
+ * CRITICAL CONFIGURATION FOR GOOGLE OAUTH:
+ * 1. Go to: https://console.cloud.google.com/apis/credentials
+ * 2. Select your OAuth 2.0 Client ID.
+ * 3. Add this EXACT URL to "Authorized redirect URIs":
+ *    https://psywkhxrbgiriwzvcdpd.supabase.co/auth/v1/callback
+ * 
+ * 4. Go to Supabase Dashboard > Auth > Providers > Google:
+ *    - Ensure it is ENABLED.
+ *    - Ensure Client ID and Secret are correct.
  */
 
 const SUPABASE_PROJECT_URL = "https://psywkhxrbgiriwzvcdpd.supabase.co";
 
-// Retrieve from environment (shimmed in index.html)
 const env = (window as any).process?.env || {};
 const supabaseUrl = env.SUPABASE_URL || SUPABASE_PROJECT_URL;
 const supabaseAnonKey = env.SUPABASE_ANON_KEY || '';
@@ -30,24 +33,25 @@ export const supabase = createClient(
 
 export const signInWithGoogle = async () => {
   if (!isKeyConfigured) {
-    return { error: { message: "Supabase configuration incomplete. Please add your SUPABASE_ANON_KEY to index.html." } };
+    return { error: { message: "Supabase configuration incomplete. Check index.html environment variables." } };
   }
   
-  // redirectTo tells Supabase where to send the user AFTER the successful 
-  // handshake at https://psywkhxrbgiriwzvcdpd.supabase.co/auth/v1/callback
+  // We use a clean origin to avoid path-based redirect mismatches in the Supabase dashboard
+  const cleanOrigin = window.location.origin.replace(/\/$/, "");
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
+      redirectTo: cleanOrigin,
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
       },
-      redirectTo: window.location.origin
     }
   });
 
   if (error) {
-    console.error('Auth Error:', error);
+    console.error('Handshake Error:', error);
     return { error };
   }
   return { data };
@@ -55,5 +59,5 @@ export const signInWithGoogle = async () => {
 
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
-  if (error) console.error('Error signing out:', error.message);
+  if (error) console.error('Sign out failed:', error.message);
 };
