@@ -2,8 +2,6 @@
 import { GoogleGenAI, Type, Modality, GenerateContentResponse } from "@google/genai";
 import { AnalysisResult, MeetingContext, ThinkingLevel } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const THINKING_LEVEL_MAP: Record<ThinkingLevel, number> = {
   'Minimal': 0,
   'Low': 4000,
@@ -13,9 +11,9 @@ const THINKING_LEVEL_MAP: Record<ThinkingLevel, number> = {
 
 /**
  * Enhanced High-Precision Cognitive OCR.
- * Instructs Gemini to reconstruct tables as Markdown and describe charts/graphs.
  */
 export async function performVisionOcr(base64Data: string, mimeType: string): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const modelName = 'gemini-3-pro-preview'; 
   try {
     const response = await ai.models.generateContent({
@@ -27,17 +25,16 @@ export async function performVisionOcr(base64Data: string, mimeType: string): Pr
             text: `Act as a high-precision Document Intelligence & Structural Extraction Engine.
             
             TRANSCRIPTION PROTOCOL:
-            1. TABLES: Detect all tables. Transcribe them exactly into GitHub-flavored Markdown. Ensure column alignment.
-            2. CHARTS/GRAPHS: Identify any visual data representations. Provide a concise, data-driven summary of the trends, values, and labels shown.
-            3. LAYOUT: Maintain logical reading order. Handle multi-column layouts by following the intended flow.
+            1. TABLES: Detect all tables. Transcribe them exactly into GitHub-flavored Markdown.
+            2. CHARTS/GRAPHS: Identify any visual data representations.
+            3. LAYOUT: Maintain logical reading order.
             4. TEXT: Extract all other text with 100% character accuracy.
             
-            Output ONLY the reconstructed content. Do not include introductory or concluding remarks.` 
+            Output ONLY the reconstructed content.` 
           },
         ],
       },
       config: {
-        // Use thinking budget to help the model reason about complex overlapping layouts
         thinkingConfig: { thinkingBudget: 1024 }
       }
     });
@@ -70,6 +67,7 @@ export async function* performCognitiveSearchStream(
   filesContent: string, 
   context: MeetingContext
 ): AsyncGenerator<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const modelName = 'gemini-3-flash-preview';
   const styleDirectives = context.answerStyles.map(style => `- Create a section exactly titled "### ${style}"`).join('\n');
 
@@ -77,10 +75,8 @@ export async function* performCognitiveSearchStream(
   - Seller: ${context.sellerNames} from ${context.sellerCompany}
   - Prospect: ${context.clientNames} from ${context.clientCompany} (Persona: ${context.persona})
   - Focus: ${context.meetingFocus}
-  - Strategy: ${context.executiveSnapshot}
   
   TASK: Synthesize a response to: "${question}". 
-  Note: Source data may contain Markdown tables and descriptive chart summaries. Use this structured data for quantitative proof.
   
   REQUIRED STRUCTURE:
   ${styleDirectives}
@@ -90,9 +86,9 @@ export async function* performCognitiveSearchStream(
 
   JSON OUTPUT SCHEMA (MUST BE VALID):
   {
-    "articularSoundbite": "Powerful 1-sentence verbatim hook.",
-    "briefExplanation": "2-3 sentence strategic summary.",
-    "answer": "The full detailed analysis.",
+    "articularSoundbite": "...",
+    "briefExplanation": "...",
+    "answer": "...",
     "psychologicalProjection": { "buyerFear": "...", "buyerIncentive": "...", "strategicLever": "..." },
     "citations": [ { "snippet": "...", "source": "..." } ],
     "reasoningChain": { "painPoint": "...", "capability": "...", "strategicValue": "..." }
@@ -103,8 +99,7 @@ export async function* performCognitiveSearchStream(
       model: modelName,
       contents: prompt,
       config: {
-        systemInstruction: `You are a Senior Cognitive Sales Strategist. Provide grounded intelligence using the provided source documents. 
-        Analyze quantitative data found in Markdown tables for precise ROI calculations.`,
+        systemInstruction: `You are a Senior Cognitive Sales Strategist. Provide grounded intelligence using source documents.`,
         responseMimeType: "application/json",
         thinkingConfig: { thinkingBudget: 2048 } 
       }
@@ -115,7 +110,7 @@ export async function* performCognitiveSearchStream(
     }
   } catch (error) {
     console.error("Streaming search failed:", error);
-    throw new Error("Cognitive Engine failed to synthesize. Check source integrity.");
+    throw new Error("Cognitive Engine failed to synthesize.");
   }
 }
 
@@ -133,8 +128,9 @@ export async function performCognitiveSearch(
 }
 
 export async function generateDynamicSuggestions(filesContent: string, context: MeetingContext): Promise<string[]> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const modelName = 'gemini-3-flash-preview';
-  const prompt = `Suggest 3 highly strategic sales questions for ${context.clientCompany || 'the prospect'}. Return as JSON array of strings.`;
+  const prompt = `Suggest 3 strategic sales questions for ${context.clientCompany || 'the prospect'}. Return as JSON array of strings.`;
   const response = await ai.models.generateContent({ 
     model: modelName, 
     contents: prompt, 
@@ -165,6 +161,7 @@ export async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampl
 }
 
 export async function generateExplanation(question: string, context: AnalysisResult): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `Explain the strategy behind: "${question}" based on: ${JSON.stringify(context.snapshot)}.`,
@@ -174,6 +171,7 @@ export async function generateExplanation(question: string, context: AnalysisRes
 }
 
 export async function generatePitchAudio(text: string, voiceName: string = 'Kore'): Promise<Uint8Array | null> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
     contents: [{ parts: [{ text: text }] }],
@@ -187,6 +185,7 @@ export async function generatePitchAudio(text: string, voiceName: string = 'Kore
 }
 
 export async function analyzeSalesContext(filesContent: string, context: MeetingContext): Promise<AnalysisResult> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const modelName = 'gemini-3-pro-preview';
   const citationSchema = {
     type: Type.OBJECT,
@@ -292,8 +291,6 @@ export async function analyzeSalesContext(filesContent: string, context: Meeting
 
   const prompt = `Synthesize high-fidelity cognitive sales intelligence. 
   
-  Note: The source materials include structural transcriptions of tables and summaries of charts. Use these quantitative data points for your analysis of threat profiles and financial significance.
-  
   --- SOURCE --- 
   ${filesContent}`;
 
@@ -302,7 +299,7 @@ export async function analyzeSalesContext(filesContent: string, context: Meeting
       model: modelName,
       contents: prompt,
       config: {
-        systemInstruction: `You are a Cognitive Sales Strategist. Provide grounded intelligence in JSON. Use Markdown tables within text fields when appropriate for clarity.`,
+        systemInstruction: `You are a Cognitive Sales Strategist. Provide grounded intelligence in JSON.`,
         responseMimeType: "application/json",
         responseSchema,
         temperature: context.temperature,

@@ -67,6 +67,7 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({ analysis }) =>
   const startPractice = async () => {
     setStatus('connecting');
     try {
+      // Must instantiate with current API Key
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -140,18 +141,10 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({ analysis }) =>
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' } } },
-          systemInstruction: `You are simulating a practice sales session. ACT AS THE BUYER defined in the following profile:
+          systemInstruction: `You are simulating a practice sales session. ACT AS THE BUYER profile:
           ROLE: ${analysis.snapshot.role}
-          DECISION STYLE: ${analysis.snapshot.decisionStyle}
-          RISK TOLERANCE: ${analysis.snapshot.riskTolerance}
           TONE: ${analysis.snapshot.tone}
-          PRIORITIES: ${analysis.snapshot.priorities.map(p => p.text).join(', ')}
-          
-          Guidelines:
-          1. React naturally to the salesperson. 
-          2. Use objections like: ${analysis.objectionHandling.map(o => o.objection).join(', ')}.
-          3. Challenge their points based on your role's fears and priorities.
-          4. Keep responses brief to keep the flow alive.`
+          PRIORITIES: ${analysis.snapshot.priorities.map(p => p.text).join(', ')}`
         },
       });
       sessionRef.current = await sessionPromise;
@@ -167,7 +160,7 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({ analysis }) =>
         <div className="flex items-center gap-3">
           <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-lg"><ICONS.Chat /></div>
           <div>
-            <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Live Practise Simulation</h3>
+            <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Live Practice Simulation</h3>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Real-time Conversational Roleplay</p>
           </div>
         </div>
@@ -187,12 +180,12 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({ analysis }) =>
           <div className="w-24 h-24 bg-indigo-50 rounded-[2rem] flex items-center justify-center text-indigo-600"><ICONS.Brain /></div>
           <div className="space-y-4">
             <h4 className="text-2xl font-black text-slate-800">Roleplay with the {analysis.snapshot.role}</h4>
-            <p className="text-slate-500 leading-relaxed">Prepare for the real deal. Our AI will assume the psychological profile inferred from your documents. Speak into your microphone and handle the heat.</p>
+            <p className="text-slate-500 leading-relaxed">Prepare for the real deal. Our AI will assume the psychological profile inferred from your documents.</p>
           </div>
           <button onClick={startPractice} disabled={status === 'connecting'} className="inline-flex items-center gap-4 px-12 py-6 bg-indigo-600 text-white rounded-full font-black text-xl shadow-2xl hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all">
             {status === 'connecting' ? 'Connecting Neural Buyer...' : <><ICONS.Play /> Start Simulation</>}
           </button>
-          {status === 'error' && <p className="text-rose-500 text-sm font-bold">Connection failed. Ensure microphone access and valid key.</p>}
+          {status === 'error' && <p className="text-rose-500 text-sm font-bold">Connection failed. Check permissions.</p>}
         </div>
       ) : (
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 overflow-hidden">
@@ -203,7 +196,6 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({ analysis }) =>
             </div>
             <div className="text-center space-y-2">
                <h5 className="text-white text-xl font-bold">{analysis.snapshot.role}</h5>
-               <p className="text-slate-400 text-sm italic">"I'm listening. Show me the value."</p>
             </div>
             <div className="absolute bottom-8 inset-x-8 h-24 overflow-y-auto no-scrollbar flex flex-col justify-end">
               {currentTranscription.user && <p className="text-right text-indigo-300 text-xs italic mb-2">You: {currentTranscription.user}</p>}
@@ -214,22 +206,17 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({ analysis }) =>
             <h6 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-4">Conversation History</h6>
             <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
               {transcription.map((turn, i) => (
-                <div key={i} className="space-y-1 animate-in slide-in-from-bottom-2">
+                <div key={i} className="space-y-1">
                   <p className="text-[9px] font-bold text-slate-400 uppercase">You</p>
-                  <p className="text-xs text-slate-700 bg-white p-2 rounded-lg border border-slate-100">"{turn.user}"</p>
+                  <p className="text-xs text-slate-700 bg-white p-2 rounded-lg">"{turn.user}"</p>
                   <p className="text-[9px] font-bold text-indigo-500 uppercase mt-2">Buyer</p>
-                  <p className="text-xs text-indigo-900 bg-indigo-50 p-2 rounded-lg border border-indigo-100 italic">"{turn.ai}"</p>
+                  <p className="text-xs text-indigo-900 bg-indigo-50 p-2 rounded-lg italic">"{turn.ai}"</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
       )}
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-      `}</style>
     </div>
   );
 };
