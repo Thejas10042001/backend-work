@@ -6,8 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cognitive Sales AI</title>
     <script>
-      // Shim process.env for the browser environment to prevent crashes
-      window.process = window.process || { env: { API_KEY: '' } };
+      // Shim process.env for the browser environment
+      window.process = window.process || { 
+        env: { 
+          API_KEY: '',
+          SUPABASE_URL: 'https://psywkhxrbgiriwzvcdpd.supabase.co',
+          SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzeXdraHhyYmdpcml3enZjZHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMjk0OTEsImV4cCI6MjA4NTcwNTQ5MX0.FWVmxwrrPiY2Is4FBvlbFS3OkSFMIztIahoIzfoFZio' 
+        } 
+      };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">

@@ -1,16 +1,39 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// These should be configured in your environment.
-// Fallback to placeholders if not provided, though the app requires them for actual auth.
-const supabaseUrl = (process.env as any).SUPABASE_URL || '';
-const supabaseAnonKey = (process.env as any).SUPABASE_ANON_KEY || '';
+/**
+ * HARDCODED PROJECT CONFIGURATION
+ */
+const SUPABASE_PROJECT_URL = "https://psywkhxrbgiriwzvcdpd.supabase.co";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Retrieve from environment (shimmed in index.html)
+const env = (window as any).process?.env || {};
+const supabaseUrl = env.SUPABASE_URL || SUPABASE_PROJECT_URL;
+const supabaseAnonKey = env.SUPABASE_ANON_KEY || '';
+
+/**
+ * Initialize Supabase Client
+ */
+const isKeyConfigured = supabaseAnonKey && 
+                        supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY' && 
+                        supabaseAnonKey !== 'placeholder-key-missing' &&
+                        supabaseAnonKey !== '';
+
+export const supabase = createClient(
+  supabaseUrl, 
+  isKeyConfigured ? supabaseAnonKey : 'placeholder-key-missing'
+);
 
 export const GOOGLE_CLIENT_ID = "692371004078-g0cemnqa93r07jqb8qmf9t38e99iiovt.apps.googleusercontent.com";
 
 export const signInWithGoogle = async () => {
+  if (!isKeyConfigured) {
+    const errorMsg = "Supabase configuration incomplete. Please add your SUPABASE_ANON_KEY to index.html.";
+    console.error(errorMsg);
+    alert(errorMsg);
+    return;
+  }
+  
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -21,7 +44,10 @@ export const signInWithGoogle = async () => {
       redirectTo: window.location.origin
     }
   });
-  if (error) console.error('Error signing in:', error.message);
+  if (error) {
+    console.error('Error signing in:', error.message);
+    alert(`Login Error: ${error.message}`);
+  }
 };
 
 export const signOut = async () => {
