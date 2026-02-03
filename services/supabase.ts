@@ -2,8 +2,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * HARDCODED PROJECT CONFIGURATION
+ * SUPABASE CONFIGURATION
+ * Project URL: https://psywkhxrbgiriwzvcdpd.supabase.co
+ * 
+ * REQUIRED GOOGLE CLOUD CONFIGURATION:
+ * In Google Cloud Console (APIs & Services > Credentials), 
+ * your "Authorized redirect URIs" MUST include:
+ * https://psywkhxrbgiriwzvcdpd.supabase.co/auth/v1/callback
  */
+
 const SUPABASE_PROJECT_URL = "https://psywkhxrbgiriwzvcdpd.supabase.co";
 
 // Retrieve from environment (shimmed in index.html)
@@ -11,9 +18,6 @@ const env = (window as any).process?.env || {};
 const supabaseUrl = env.SUPABASE_URL || SUPABASE_PROJECT_URL;
 const supabaseAnonKey = env.SUPABASE_ANON_KEY || '';
 
-/**
- * Initialize Supabase Client
- */
 const isKeyConfigured = supabaseAnonKey && 
                         supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY' && 
                         supabaseAnonKey !== 'placeholder-key-missing' &&
@@ -24,17 +28,14 @@ export const supabase = createClient(
   isKeyConfigured ? supabaseAnonKey : 'placeholder-key-missing'
 );
 
-export const GOOGLE_CLIENT_ID = "692371004078-g0cemnqa93r07jqb8qmf9t38e99iiovt.apps.googleusercontent.com";
-
 export const signInWithGoogle = async () => {
   if (!isKeyConfigured) {
-    const errorMsg = "Supabase configuration incomplete. Please add your SUPABASE_ANON_KEY to index.html.";
-    console.error(errorMsg);
-    alert(errorMsg);
-    return;
+    return { error: { message: "Supabase configuration incomplete. Please add your SUPABASE_ANON_KEY to index.html." } };
   }
   
-  const { error } = await supabase.auth.signInWithOAuth({
+  // redirectTo tells Supabase where to send the user AFTER the successful 
+  // handshake at https://psywkhxrbgiriwzvcdpd.supabase.co/auth/v1/callback
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       queryParams: {
@@ -44,10 +45,12 @@ export const signInWithGoogle = async () => {
       redirectTo: window.location.origin
     }
   });
+
   if (error) {
-    console.error('Error signing in:', error.message);
-    alert(`Login Error: ${error.message}`);
+    console.error('Auth Error:', error);
+    return { error };
   }
+  return { data };
 };
 
 export const signOut = async () => {
